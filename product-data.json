@@ -1,42 +1,73 @@
-[
-    {
-        "brand": "Samsung",
-        "model": "A50",
-        "part": "Display",
-        "similarDisplay": "Samsung A30, Samsung A20",
+{
+  "Samsung": {
+    "Display": {
+      "A50": {
+        "box": "D-A",
+        "similarModels": ["Samsung A30", "Samsung A20"],
         "status": "available",
-        "timestamp": "8/19/2025 17:20:42"
-    },
-     {
-        "brand": "Samsung",
-        "model": "A13",
-        "part": "Display",
-        "similarDisplay": "Samsung Galaxy A13 5G,Samsung Galaxy A32,Samsung Galaxy A56,Samsung Galaxy A14 5G,Samsung Galaxy A16 5G,Samsung Galaxy A23,Oppo A95 5G, Samsung Galaxy A16,Samsung Galaxy A06,Samsung Galaxy A12",
+        "timestamp": "2025-08-19T17:20:42Z"
+      },
+      "A13": {
+        "box": "D-D",
+        "similarModels": [
+          "Samsung Galaxy A13 5G",
+          "Samsung Galaxy A32",
+          "Samsung Galaxy A56",
+          "Samsung Galaxy A14 5G",
+          "Samsung Galaxy A16 5G",
+          "Samsung Galaxy A23",
+          "Oppo A95 5G",
+          "Samsung Galaxy A16",
+          "Samsung Galaxy A06",
+          "Samsung Galaxy A12"
+        ],
         "status": "out-of-stock",
-        "timestamp": "8/19/2025 17:20:42"
+        "timestamp": "2025-08-19T17:20:42Z"
+      }
     },
-    {
-        "brand": "Redmi",
-        "model": "Note 9 Pro",
-        "part": "Battery",
-        "similarDisplay": "",
-        "status": "out-of-stock",
-        "timestamp": "8/19/2025 17:29:58"
-    },
-    {
-        "brand": "Apple",
-        "model": "iPhone 12",
-        "part": "Display",
-        "similarDisplay": "iPhone 11, iPhone XR",
+    "Charging Port": {
+      "S20": {
+        "box": "CP-A",
+        "similarModels": ["Samsung S10", "Samsung Note 10"],
         "status": "available",
-        "timestamp": "8/19/2025 18:45:22"
-    },
-    {
-        "brand": "Samsung",
-        "model": "S20",
-        "part": "Charging Port",
-        "similarDisplay": "Samsung S10, Samsung Note 10",
-        "status": "available",
-        "timestamp": "8/19/2025 19:12:36"
+        "timestamp": "2025-08-19T19:12:36Z"
+      }
     }
-]
+  },
+  "Redmi": {
+    "Battery": {
+      "Note 9 Pro": {
+        "box": "B-A",
+        "similarModels": [],
+        "status": "out-of-stock",
+        "timestamp": "2025-08-19T17:29:58Z"
+      }
+    }
+  },
+  "Apple": {
+    "Display": {
+      "iPhone 12": {
+        "box": "D-J",
+        "similarModels": ["iPhone 11", "iPhone XR"],
+        "status": "available",
+        "timestamp": "2025-08-19T18:45:22Z"
+      }
+    }
+  },
+  "OPPO": {
+    "Display": {
+      "A53": {
+        "box": "D-J",
+        "similarModels": ["71", "A54"],
+        "status": "available",
+        "timestamp": "2025-08-19T18:45:22Z"
+      },
+      "A74 5G": {
+        "box": "D-1",
+        "similarModels": [],
+        "status": "available",
+        "timestamp": "2025-08-19T18:45:22Z"
+      }
+    }
+  }
+}
