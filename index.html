@@ -20,29 +20,49 @@
             text-align: center;
         }
 
-        #search-bar {
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
             margin: 20px 0;
+            padding: 0 20px;
+        }
+
+        #search-bar {
             padding: 10px;
             width: 100%;
             max-width: 300px;
             font-size: 16px;
             border: 2px solid #ccc;
             border-radius: 5px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
         }
 
         .filters {
-            text-align: center;
-            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
-        .filters select {
+        .filters select, #refresh-btn {
             padding: 10px;
             font-size: 16px;
             border-radius: 5px;
             border: 1px solid #ccc;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        #refresh-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+        }
+
+        #refresh-btn:hover {
+            background-color: #45a049;
         }
 
         .product-cards-container {
@@ -50,6 +70,7 @@
             flex-wrap: wrap;
             justify-content: center;
             margin-top: 20px;
+            padding: 0 20px;
         }
 
         .product-card {
@@ -60,6 +81,7 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease-in-out;
+            position: relative;
         }
 
         .product-card:hover {
@@ -68,7 +90,7 @@
 
         .product-card h3 {
             font-size: 18px;
-            margin: 0;
+            margin: 0 0 10px 0;
         }
 
         .product-card p {
@@ -76,10 +98,39 @@
             margin: 5px 0;
         }
 
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .available {
+            background-color: #4CAF50;
+        }
+
+        .out-of-stock {
+            background-color: #f44336;
+        }
+
         #stats {
             text-align: center;
             font-size: 18px;
             margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            min-width: 150px;
         }
 
         .footer {
@@ -92,6 +143,22 @@
             width: 100%;
         }
 
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
@@ -101,27 +168,41 @@
     <p>Your one-stop solution to track product stock information</p>
 </header>
 
-<!-- Search Bar -->
-<input type="text" id="search-bar" placeholder="Search for products (Brand, Model, etc.)">
-
-<!-- Filters Section -->
-<div class="filters">
-    <label for="status-filter">Filter by Availability: </label>
-    <select id="status-filter">
-        <option value="">All</option>
-        <option value="AVAILABLE">Available</option>
-        <option value="OUT OF STOCK">Out of Stock</option>
-    </select>
+<div class="controls">
+    <!-- Search Bar -->
+    <input type="text" id="search-bar" placeholder="Search for products (Brand, Model, etc.)">
+    
+    <!-- Filters Section -->
+    <div class="filters">
+        <label for="status-filter">Filter by Availability: </label>
+        <select id="status-filter">
+            <option value="all">All</option>
+            <option value="available">Available</option>
+            <option value="out-of-stock">Out of Stock</option>
+        </select>
+        
+        <!-- Refresh Button -->
+        <button id="refresh-btn">Refresh Data</button>
+    </div>
 </div>
 
 <!-- Statistics -->
 <div id="stats">
-    <p>Available Products: <span id="available-products">-</span></p>
-    <p>Out of Stock Products: <span id="out-of-stock-products">-</span></p>
+    <div class="stat-box">
+        <p>Total Products: <span id="total-products">-</span></p>
+    </div>
+    <div class="stat-box">
+        <p>Available Products: <span id="available-products">-</span></p>
+    </div>
+    <div class="stat-box">
+        <p>Out of Stock Products: <span id="out-of-stock-products">-</span></p>
+    </div>
 </div>
 
 <!-- Product Cards Container -->
-<div id="product-cards" class="product-cards-container"></div>
+<div id="product-cards" class="product-cards-container">
+    <div class="loading">Loading product data...</div>
+</div>
 
 <!-- Footer -->
 <div class="footer">
@@ -138,6 +219,8 @@
     // Fetch and Parse Google Sheets JSON
     async function fetchData() {
         try {
+            document.getElementById('product-cards').innerHTML = '<div class="loading">Loading product data...</div>';
+            
             const response = await fetch(jsonUrl);
             const data = await response.text();
             const jsonData = JSON.parse(data.substr(47).slice(0, -2)); // Clean JSON response
@@ -145,32 +228,44 @@
             const rows = jsonData.table.rows;
 
             // Parse stock data
-            stockData = rows.map(row => {
+            stockData = rows.map((row, index) => {
+                // Skip header row (index 0)
+                if (index === 0) return null;
+                
                 const cells = row.c;
                 return {
                     brand: cells[1]?.v || '',
                     model: cells[2]?.v || '',
                     part: cells[3]?.v || '',
                     similarDisplay: cells[4]?.v || '',
-                    timestamp: cells[0]?.f || ''
+                    timestamp: cells[0]?.f || '',
+                    // Determine availability based on your business logic
+                    // This is a placeholder - adjust according to your actual data structure
+                    status: cells[4]?.v ? 'available' : 'out-of-stock'
                 };
-            }).filter(item => item.brand && item.model && item.part);
+            }).filter(item => item && item.brand && item.model && item.part);
 
             // Render data to UI
             renderProducts(stockData);
         } catch (error) {
             console.error('Error fetching or parsing data:', error);
+            document.getElementById('product-cards').innerHTML = '<div class="loading">Error loading data. Please try again.</div>';
         }
     }
 
     // Function to generate Product Cards
     function generateProductCard(product) {
+        const statusClass = product.status === 'available' ? 'available' : 'out-of-stock';
+        const statusText = product.status === 'available' ? 'Available' : 'Out of Stock';
+        
         return `
             <div class="product-card">
+                <div class="status-indicator ${statusClass}" title="${statusText}"></div>
                 <h3>${product.brand} ${product.model}</h3>
                 <p><strong>Part:</strong> ${product.part}</p>
                 <p><strong>Similar Display:</strong> ${product.similarDisplay || 'N/A'}</p>
                 <p><strong>Timestamp:</strong> ${product.timestamp}</p>
+                <p><strong>Status:</strong> ${statusText}</p>
             </div>
         `;
     }
@@ -178,15 +273,23 @@
     // Render all products
     function renderProducts(data) {
         const productCardsContainer = document.getElementById('product-cards');
+        
+        if (data.length === 0) {
+            productCardsContainer.innerHTML = '<div class="loading">No products found matching your criteria.</div>';
+            return;
+        }
+        
         productCardsContainer.innerHTML = data.map(generateProductCard).join('');
         updateStatistics(data);
     }
 
-    // Update statistics (Available & Out of Stock Products)
+    // Update statistics
     function updateStatistics(data) {
-        const availableProducts = data.filter(product => product.similarDisplay).length;
-        const outOfStockProducts = data.length - availableProducts;
+        const totalProducts = data.length;
+        const availableProducts = data.filter(product => product.status === 'available').length;
+        const outOfStockProducts = totalProducts - availableProducts;
 
+        document.getElementById('total-products').textContent = totalProducts;
         document.getElementById('available-products').textContent = availableProducts;
         document.getElementById('out-of-stock-products').textContent = outOfStockProducts;
     }
@@ -194,23 +297,46 @@
     // Handle search filter
     document.getElementById('search-bar').addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
-        const filteredData = stockData.filter(product =>
-            product.brand.toLowerCase().includes(searchTerm) ||
-            product.model.toLowerCase().includes(searchTerm) ||
-            product.part.toLowerCase().includes(searchTerm) ||
-            product.similarDisplay.toLowerCase().includes(searchTerm)
-        );
+        const statusFilter = document.getElementById('status-filter').value;
+        
+        const filteredData = stockData.filter(product => {
+            const matchesSearch = 
+                product.brand.toLowerCase().includes(searchTerm) ||
+                product.model.toLowerCase().includes(searchTerm) ||
+                product.part.toLowerCase().includes(searchTerm) ||
+                (product.similarDisplay && product.similarDisplay.toLowerCase().includes(searchTerm));
+            
+            const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
+            
+            return matchesSearch && matchesStatus;
+        });
+        
         renderProducts(filteredData);
     });
 
     // Handle status filter
     document.getElementById('status-filter').addEventListener('change', (e) => {
         const status = e.target.value;
-        const filteredData = status
-            ? stockData.filter(product => product.similarDisplay.toLowerCase() === status.toLowerCase())
-            : stockData;
-
+        const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+        
+        const filteredData = stockData.filter(product => {
+            const matchesSearch = 
+                product.brand.toLowerCase().includes(searchTerm) ||
+                product.model.toLowerCase().includes(searchTerm) ||
+                product.part.toLowerCase().includes(searchTerm) ||
+                (product.similarDisplay && product.similarDisplay.toLowerCase().includes(searchTerm));
+            
+            const matchesStatus = status === 'all' || product.status === status;
+            
+            return matchesSearch && matchesStatus;
+        });
+        
         renderProducts(filteredData);
+    });
+
+    // Handle refresh button
+    document.getElementById('refresh-btn').addEventListener('click', () => {
+        fetchData();
     });
 
     // Fetch data when the page loads
