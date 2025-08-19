@@ -213,6 +213,21 @@
             margin-bottom: 15px;
         }
         
+        .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #ff4d4d;
+            background: #ffebee;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .error i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        
         footer {
             text-align: center;
             margin-top: 50px;
@@ -239,13 +254,22 @@
             line-height: 1.6;
         }
         
-        .instructions .success {
-            background: #e8f6ef;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            color: #05c46b;
-            font-weight: 600;
+        .refresh-btn {
+            background: #4a6491;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .refresh-btn:hover {
+            background: #3a547b;
         }
         
         @media (max-width: 768px) {
@@ -286,18 +310,15 @@
         <div class="instructions">
             <h2>Live Google Sheets Integration</h2>
             <p>This website is directly connected to your Google Sheets. All data is fetched in real-time from your published sheet.</p>
-            <div class="success">
-                <i class="fas fa-check-circle"></i> Successfully connected to your Google Sheets!
-            </div>
+            <button class="refresh-btn" id="refreshButton">
+                <i class="fas fa-sync-alt"></i> Refresh Data Now
+            </button>
         </div>
 
-        <div class="filter-container">
+        <div class="filter-container" id="filterContainer">
             <div class="filter active" data-filter="all">All Products</div>
             <div class="filter" data-filter="available">Available</div>
-            <div class="filter" data-filter="samsung">Samsung</div>
-            <div class="filter" data-filter="apple">Apple</div>
-            <div class="filter" data-filter="display">Display</div>
-            <div class="filter" data-filter="battery">Battery</div>
+            <!-- Dynamic filters will be added here -->
         </div>
 
         <div class="stats">
@@ -320,6 +341,12 @@
             <p>Loading data from Google Sheets...</p>
         </div>
 
+        <div id="errorMessage" class="error" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Unable to load data from Google Sheets.</p>
+            <p>Please check your connection and try again.</p>
+        </div>
+
         <div class="products-grid" id="productsGrid">
             <!-- Product cards will be generated here -->
         </div>
@@ -336,44 +363,56 @@
         // DOM elements
         const productsGrid = document.getElementById('productsGrid');
         const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
         const totalProductsElement = document.getElementById('totalProducts');
         const availableProductsElement = document.getElementById('availableProducts');
         const outOfStockProductsElement = document.getElementById('outOfStockProducts');
+        const refreshButton = document.getElementById('refreshButton');
+        const filterContainer = document.getElementById('filterContainer');
         
         // Store the fetched data
         let stockData = [];
+        let brands = new Set();
+        let categories = new Set();
         
-        // Fetch data from Google Sheets
+        // Fetch data from Google Sheets using JSON approach
         async function fetchData() {
             try {
                 loadingIndicator.style.display = 'block';
+                errorMessage.style.display = 'none';
                 productsGrid.innerHTML = '';
                 
-                // Use a proxy to bypass CORS issues
-                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-                const response = await fetch(proxyUrl + publishedSheetUrl);
-                const htmlText = await response.text();
+                // Convert the HTML publication to a JSON endpoint
+                const sheetId = '1-uq04aNDa3adiFKLd2C9_G2IQPGrHMBQRT6rEQdU1RA';
+                const jsonUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
                 
-                // Parse the HTML to extract table data
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
-                const table = doc.querySelector('table');
+                const response = await fetch(jsonUrl);
                 
-                if (!table) {
-                    throw new Error('No table found in the published sheet');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                // Extract data from table rows (skip the header row)
-                const rows = Array.from(table.querySelectorAll('tr')).slice(1);
-                stockData = rows.map(row => {
-                    const cells = Array.from(row.querySelectorAll('td'));
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+                
+                // Extract data from the JSON
+                const rows = json.table.rows;
+                stockData = rows.slice(1).map(row => { // Skip header row
+                    const cells = row.c;
                     return {
-                        brand: cells[0] ? cells[0].textContent.trim() : '',
-                        model: cells[1] ? cells[1].textContent.trim() : '',
-                        part: cells[2] ? cells[2].textContent.trim() : '',
-                        status: cells[3] ? cells[3].textContent.trim() : ''
+                        brand: cells[1] ? cells[1].v : '',
+                        model: cells[2] ? cells[2].v : '',
+                        part: cells[3] ? cells[3].v : '',
+                        status: cells[4] ? cells[4].v : ''
                     };
                 }).filter(item => item.brand && item.model); // Filter out empty rows
+                
+                if (stockData.length === 0) {
+                    throw new Error('No data found in the sheet');
+                }
+                
+                // Extract unique brands and categories for filters
+                extractFilters(stockData);
                 
                 // Update statistics
                 updateStatistics(stockData);
@@ -384,43 +423,98 @@
                 loadingIndicator.style.display = 'none';
             } catch (error) {
                 console.error('Error fetching data:', error);
-                loadingIndicator.innerHTML = `
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Error loading data from Google Sheets.</p>
-                    <p>Using sample data for demonstration.</p>
-                `;
-                
-                // Use sample data if fetch fails
-                useSampleData();
+                loadingIndicator.style.display = 'none';
+                errorMessage.style.display = 'block';
+                productsGrid.innerHTML = '';
             }
         }
         
-        // Use sample data if Google Sheets is not accessible
-        function useSampleData() {
-            stockData = [
-                { brand: "SAMSUNG", model: "A50", part: "DISPLAY", status: "NOT AVAILABLE" },
-                { brand: "SAMSUNG", model: "S20", part: "BATTERY", status: "AVAILABLE" },
-                { brand: "APPLE", model: "iPhone 12", part: "DISPLAY", status: "AVAILABLE" },
-                { brand: "XIAOMI", model: "Redmi Note 9", part: "CAMERA", status: "AVAILABLE" },
-                { brand: "SAMSUNG", model: "A71", part: "CHARGING PORT", status: "NOT AVAILABLE" },
-                { brand: "APPLE", model: "iPhone 11", part: "BATTERY", status: "AVAILABLE" },
-                { brand: "SAMSUNG", model: "S10", part: "DISPLAY", status: "AVAILABLE" },
-                { brand: "GOOGLE", model: "Pixel 5", part: "MOTHERBOARD", status: "AVAILABLE" },
-                { brand: "SAMSUNG", model: "A30", part: "BATTERY", status: "NOT AVAILABLE" },
-                { brand: "APPLE", model: "iPhone X", part: "DISPLAY", status: "NOT AVAILABLE" },
-                { brand: "XIAOMI", model: "Poco X3", part: "SPEAKER", status: "AVAILABLE" },
-                { brand: "SAMSUNG", model: "Note 20", part: "DISPLAY", status: "AVAILABLE" }
-            ];
+        // Extract unique brands and categories for filters
+        function extractFilters(data) {
+            brands.clear();
+            categories.clear();
             
-            updateStatistics(stockData);
-            generateProductCards(stockData);
-            loadingIndicator.style.display = 'none';
+            data.forEach(item => {
+                if (item.brand) brands.add(item.brand.toUpperCase());
+                if (item.part) categories.add(item.part.toUpperCase());
+            });
+            
+            // Clear existing dynamic filters (keep All and Available)
+            const staticFilters = Array.from(filterContainer.querySelectorAll('.filter'))
+                .filter(filter => 
+                    filter.getAttribute('data-filter') === 'all' || 
+                    filter.getAttribute('data-filter') === 'available'
+                );
+            
+            filterContainer.innerHTML = '';
+            staticFilters.forEach(filter => filterContainer.appendChild(filter));
+            
+            // Add brand filters
+            brands.forEach(brand => {
+                const filter = document.createElement('div');
+                filter.className = 'filter';
+                filter.setAttribute('data-filter', brand.toLowerCase());
+                filter.textContent = brand;
+                filterContainer.appendChild(filter);
+            });
+            
+            // Add category filters
+            categories.forEach(category => {
+                const filter = document.createElement('div');
+                filter.className = 'filter';
+                filter.setAttribute('data-filter', category.toLowerCase());
+                filter.textContent = category;
+                filterContainer.appendChild(filter);
+            });
+            
+            // Add event listeners to new filters
+            addFilterListeners();
+        }
+        
+        // Add event listeners to filter buttons
+        function addFilterListeners() {
+            const filters = document.querySelectorAll('.filter');
+            filters.forEach(filter => {
+                filter.addEventListener('click', () => {
+                    // Update active filter
+                    filters.forEach(f => f.classList.remove('active'));
+                    filter.classList.add('active');
+                    
+                    const filterValue = filter.getAttribute('data-filter');
+                    let filteredProducts = [];
+                    
+                    switch(filterValue) {
+                        case 'all':
+                            filteredProducts = stockData;
+                            break;
+                        case 'available':
+                            filteredProducts = stockData.filter(product => 
+                                product.status.toUpperCase() === "AVAILABLE");
+                            break;
+                        default:
+                            // Check if it's a brand filter
+                            if (brands.has(filterValue.toUpperCase())) {
+                                filteredProducts = stockData.filter(product => 
+                                    product.brand.toUpperCase() === filterValue.toUpperCase());
+                            } 
+                            // Check if it's a category filter
+                            else if (categories.has(filterValue.toUpperCase())) {
+                                filteredProducts = stockData.filter(product => 
+                                    product.part.toUpperCase() === filterValue.toUpperCase());
+                            } else {
+                                filteredProducts = stockData;
+                            }
+                    }
+                    
+                    generateProductCards(filteredProducts);
+                });
+            });
         }
         
         // Update statistics
         function updateStatistics(data) {
             const total = data.length;
-            const available = data.filter(item => item.status === "AVAILABLE").length;
+            const available = data.filter(item => item.status.toUpperCase() === "AVAILABLE").length;
             const notAvailable = total - available;
             
             totalProductsElement.textContent = total;
@@ -443,7 +537,7 @@
             }
             
             products.forEach(product => {
-                const isAvailable = product.status === "AVAILABLE";
+                const isAvailable = product.status.toUpperCase() === "AVAILABLE";
                 const iconClass = isAvailable ? 'fa-check-circle' : 'fa-times-circle';
                 const availabilityClass = isAvailable ? 'available' : 'not-available';
                 
@@ -467,48 +561,6 @@
                 productsGrid.appendChild(productCard);
             });
         }
-
-        // Filter functionality
-        const filters = document.querySelectorAll('.filter');
-        filters.forEach(filter => {
-            filter.addEventListener('click', () => {
-                // Update active filter
-                filters.forEach(f => f.classList.remove('active'));
-                filter.classList.add('active');
-                
-                const filterValue = filter.getAttribute('data-filter');
-                let filteredProducts = [];
-                
-                switch(filterValue) {
-                    case 'all':
-                        filteredProducts = stockData;
-                        break;
-                    case 'available':
-                        filteredProducts = stockData.filter(product => product.status === "AVAILABLE");
-                        break;
-                    case 'samsung':
-                        filteredProducts = stockData.filter(product => 
-                            product.brand.toUpperCase().includes("SAMSUNG"));
-                        break;
-                    case 'apple':
-                        filteredProducts = stockData.filter(product => 
-                            product.brand.toUpperCase().includes("APPLE"));
-                        break;
-                    case 'display':
-                        filteredProducts = stockData.filter(product => 
-                            product.part.toUpperCase().includes("DISPLAY"));
-                        break;
-                    case 'battery':
-                        filteredProducts = stockData.filter(product => 
-                            product.part.toUpperCase().includes("BATTERY"));
-                        break;
-                    default:
-                        filteredProducts = stockData;
-                }
-                
-                generateProductCards(filteredProducts);
-            });
-        });
 
         // Search functionality
         document.getElementById('searchButton').addEventListener('click', performSearch);
@@ -538,11 +590,17 @@
             generateProductCards(filteredProducts);
         }
         
+        // Refresh button functionality
+        refreshButton.addEventListener('click', fetchData);
+        
         // Initial data fetch
         fetchData();
         
         // Refresh data every 2 minutes
         setInterval(fetchData, 120000);
+        
+        // Initial filter listeners
+        addFilterListeners();
     </script>
 </body>
 </html>
