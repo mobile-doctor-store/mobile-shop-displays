@@ -7,6 +7,14 @@
         "status": "available",
         "timestamp": "8/19/2025 17:20:42"
     },
+     {
+        "brand": "Samsung",
+        "model": "A13",
+        "part": "Display",
+        "similarDisplay": "Samsung Galaxy A13 5G,Samsung Galaxy A32,Samsung Galaxy A56,Samsung Galaxy A14 5G,Samsung Galaxy A16 5G,Samsung Galaxy A23,Oppo A95 5G, Samsung Galaxy A16,Samsung Galaxy A06,Samsung Galaxy A12",
+        "status": "out-of-stock",
+        "timestamp": "8/19/2025 17:20:42"
+    },
     {
         "brand": "Redmi",
         "model": "Note 9 Pro",
