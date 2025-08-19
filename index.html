@@ -241,6 +241,22 @@
             font-size: 0.9rem;
         }
         
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #c62828;
+            background: #ffebee;
+            border-radius: 12px;
+        }
+        
         @media (max-width: 768px) {
             .search-container {
                 flex-direction: column;
@@ -292,119 +308,30 @@
         <div class="stats-container">
             <div class="stat-box">
                 <h3>Total Products</h3>
-                <div class="stat-value" id="total-products">12</div>
+                <div class="stat-value" id="total-products">-</div>
             </div>
             <div class="stat-box">
                 <h3>Available Now</h3>
-                <div class="stat-value" id="available-products">8</div>
+                <div class="stat-value" id="available-products">-</div>
             </div>
             <div class="stat-box">
                 <h3>Out of Stock</h3>
-                <div class="stat-value" id="out-of-stock">4</div>
+                <div class="stat-value" id="out-of-stock">-</div>
             </div>
         </div>
         
         <div class="products-grid" id="products-container">
-            <!-- Product cards will be generated here -->
-            <div class="product-card">
-                <div class="card-header">
-                    <h3>Samsung A50</h3>
-                </div>
-                <div class="card-body">
-                    <div class="product-detail">
-                        <span class="detail-label">Part</span>
-                        <span class="detail-value">Display</span>
-                    </div>
-                    <div class="product-detail">
-                        <span class="detail-label">Similar Display</span>
-                        <span class="detail-value">Samsung A30, Samsung A20</span>
-                    </div>
-                    <div class="product-detail">
-                        <span class="detail-label">Status</span>
-                        <span class="status-available">Available</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="product-card">
-                <div class="card-header">
-                    <h3>Redmi Note 9 Pro</h3>
-                </div>
-                <div class="card-body">
-                    <div class="product-detail">
-                        <span class="detail-label">Part</span>
-                        <span class="detail-value">Battery</span>
-                    </div>
-                    <div class="product-detail">
-                        <span class="detail-label">Status</span>
-                        <span class="status-out-of-stock">Out of Stock</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="product-card">
-                <div class="card-header">
-                    <h3>Apple iPhone 12</h3>
-                </div>
-                <div class="card-body">
-                    <div class="product-detail">
-                        <span class="detail-label">Part</span>
-                        <span class="detail-value">Display</span>
-                    </div>
-                    <div class="product-detail">
-                        <span class="detail-label">Similar Display</span>
-                        <span class="detail-value">iPhone 11, iPhone XR</span>
-                    </div>
-                    <div class="product-detail">
-                        <span class="detail-label">Status</span>
-                        <span class="status-available">Available</span>
-                    </div>
-                </div>
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Loading product data...
             </div>
         </div>
         
         <div class="last-updated">
-            Last updated: <span id="last-updated-time">Just now</span>
+            Last updated: <span id="last-updated-time">-</span>
         </div>
     </div>
 
     <script>
-        // Sample data structure - this would come from Google Sheets
-        const sampleData = [
-            {
-                brand: "Samsung",
-                model: "A50",
-                part: "Display",
-                similarDisplay: "Samsung A30, Samsung A20",
-                status: "available",
-                timestamp: "8/19/2025 17:20:42"
-            },
-            {
-                brand: "Redmi",
-                model: "Note 9 Pro",
-                part: "Battery",
-                similarDisplay: "",
-                status: "out-of-stock",
-                timestamp: "8/19/2025 17:29:58"
-            },
-            {
-                brand: "Apple",
-                model: "iPhone 12",
-                part: "Display",
-                similarDisplay: "iPhone 11, iPhone XR",
-                status: "available",
-                timestamp: "8/19/2025 18:45:22"
-            },
-            {
-                brand: "Samsung",
-                model: "S20",
-                part: "Charging Port",
-                similarDisplay: "Samsung S10, Samsung Note 10",
-                status: "available",
-                timestamp: "8/19/2025 19:12:36"
-            }
-        ];
-
         // DOM elements
         const productsContainer = document.getElementById('products-container');
         const searchInput = document.getElementById('search-input');
@@ -415,15 +342,67 @@
         const outOfStockEl = document.getElementById('out-of-stock');
         const lastUpdatedEl = document.getElementById('last-updated-time');
 
+        // Global variables
+        let allProducts = [];
+        let showAllProducts = true;
+
         // Initialize the page
         document.addEventListener('DOMContentLoaded', () => {
-            renderProducts(sampleData);
-            updateStats(sampleData);
-            updateLastUpdated();
+            loadProductData();
         });
+
+        // Load product data from external JSON file
+        async function loadProductData() {
+            try {
+                showLoading();
+                
+                // In a real implementation, you would fetch from your Google Sheets URL
+                // For demonstration, we're using a local JSON file
+                const response = await fetch('product-data.json');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                allProducts = await response.json();
+                renderProducts(allProducts);
+                updateStats(allProducts);
+                updateLastUpdated();
+            } catch (error) {
+                console.error('Error loading product data:', error);
+                showError('Failed to load product data. Please try again.');
+            }
+        }
+
+        // Show loading state
+        function showLoading() {
+            productsContainer.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading product data...
+                </div>
+            `;
+        }
+
+        // Show error state
+        function showError(message) {
+            productsContainer.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-circle"></i> ${message}
+                </div>
+            `;
+        }
 
         // Render product cards
         function renderProducts(products) {
+            if (products.length === 0) {
+                productsContainer.innerHTML = `
+                    <div class="loading">
+                        No products found matching your criteria.
+                    </div>
+                `;
+                return;
+            }
+            
             productsContainer.innerHTML = '';
             
             products.forEach(product => {
@@ -494,7 +473,7 @@
         // Search functionality
         searchInput.addEventListener('input', () => {
             const searchTerm = searchInput.value.toLowerCase();
-            const filteredProducts = sampleData.filter(product => 
+            const filteredProducts = allProducts.filter(product => 
                 product.brand.toLowerCase().includes(searchTerm) ||
                 product.model.toLowerCase().includes(searchTerm) ||
                 product.part.toLowerCase().includes(searchTerm) ||
@@ -509,11 +488,8 @@
         refreshBtn.addEventListener('click', () => {
             refreshBtn.querySelector('i').classList.add('fa-spin');
             
-            // Simulate data refresh
-            setTimeout(() => {
-                renderProducts(sampleData);
-                updateStats(sampleData);
-                updateLastUpdated();
+            // Refresh data
+            loadProductData().then(() => {
                 refreshBtn.querySelector('i').classList.remove('fa-spin');
                 
                 // Show refresh confirmation
@@ -523,24 +499,23 @@
                 setTimeout(() => {
                     refreshBtn.innerHTML = originalText;
                 }, 2000);
-            }, 1000);
+            });
         });
 
         // Toggle products button
-        let showAllProducts = true;
         toggleProductsBtn.addEventListener('click', () => {
             showAllProducts = !showAllProducts;
             
             if (showAllProducts) {
-                renderProducts(sampleData);
+                renderProducts(allProducts);
                 toggleProductsBtn.innerHTML = '<i class="fas fa-filter"></i> All Products Available';
             } else {
-                const availableProducts = sampleData.filter(p => p.status === 'available');
+                const availableProducts = allProducts.filter(p => p.status === 'available');
                 renderProducts(availableProducts);
                 toggleProductsBtn.innerHTML = '<i class="fas fa-filter"></i> Show All Products';
             }
             
-            updateStats(sampleData);
+            updateStats(allProducts);
         });
     </script>
 </body>
