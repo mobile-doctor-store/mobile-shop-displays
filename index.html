@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Management System</title>
+    <title>Mobile Parts Stock Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -234,13 +234,18 @@
             margin-bottom: 15px;
         }
         
-        .instructions ol {
-            margin-left: 20px;
-            line-height: 1.8;
+        .instructions p {
+            margin-bottom: 15px;
+            line-height: 1.6;
         }
         
-        .instructions li {
-            margin-bottom: 10px;
+        .instructions .success {
+            background: #e8f6ef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            color: #05c46b;
+            font-weight: 600;
         }
         
         @media (max-width: 768px) {
@@ -263,8 +268,8 @@
     <header>
         <div class="container header-content">
             <div class="logo">
-                <i class="fas fa-boxes"></i>
-                <h1>Stock Management</h1>
+                <i class="fas fa-mobile-alt"></i>
+                <h1>Mobile Parts Stock</h1>
             </div>
             <div class="search-container">
                 <div class="search-box">
@@ -279,20 +284,18 @@
 
     <div class="container">
         <div class="instructions">
-            <h2>How to Connect to Google Sheets</h2>
-            <ol>
-                <li>Open your Google Sheet and click <strong>File > Share > Publish to web</strong></li>
-                <li>Select the <strong>"Entire Document"</strong> option and <strong>"Web page"</strong> format</li>
-                <li>Click <strong>"Publish"</strong> and copy the generated link</li>
-                <li>Replace the sheet URL in the code with your published sheet URL</li>
-                <li>Your data will automatically load on this page</li>
-            </ol>
+            <h2>Live Google Sheets Integration</h2>
+            <p>This website is directly connected to your Google Sheets. All data is fetched in real-time from your published sheet.</p>
+            <div class="success">
+                <i class="fas fa-check-circle"></i> Successfully connected to your Google Sheets!
+            </div>
         </div>
 
         <div class="filter-container">
             <div class="filter active" data-filter="all">All Products</div>
             <div class="filter" data-filter="available">Available</div>
             <div class="filter" data-filter="samsung">Samsung</div>
+            <div class="filter" data-filter="apple">Apple</div>
             <div class="filter" data-filter="display">Display</div>
             <div class="filter" data-filter="battery">Battery</div>
         </div>
@@ -323,13 +326,12 @@
     </div>
 
     <footer>
-        <p>Stock Management System &copy; 2023 | Backend: Google Sheets</p>
+        <p>Mobile Parts Stock Management System &copy; 2023 | Powered by Google Sheets</p>
     </footer>
 
     <script>
-        // Google Sheets ID and URL
-        const sheetId = '1-uq04aNDa3adiFKLd2C9_G2IQPGrHMBQRT6rEQdU1RA';
-        const sheetURL = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+        // Your published Google Sheets URL
+        const publishedSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRVdyzYXfRPa95RJZ0kSnENHTmXxjO-m0G4Xi2DXXCX2icxzN5Pc5BdQI6WC-l91PopwI6Z5OW5SdhL/pubhtml";
         
         // DOM elements
         const productsGrid = document.getElementById('productsGrid');
@@ -347,25 +349,31 @@
                 loadingIndicator.style.display = 'block';
                 productsGrid.innerHTML = '';
                 
-                const response = await fetch(sheetURL);
-                const data = await response.text();
+                // Use a proxy to bypass CORS issues
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const response = await fetch(proxyUrl + publishedSheetUrl);
+                const htmlText = await response.text();
                 
-                // Parse the JSON response (it's returned with some prefix text)
-                const jsonData = JSON.parse(data.substring(47).slice(0, -2));
+                // Parse the HTML to extract table data
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const table = doc.querySelector('table');
                 
-                // Extract the rows from the sheet
-                const rows = jsonData.table.rows;
+                if (!table) {
+                    throw new Error('No table found in the published sheet');
+                }
                 
-                // Process the data (skip the header row if needed)
-                stockData = rows.slice(1).map(row => {
-                    const cells = row.c;
+                // Extract data from table rows (skip the header row)
+                const rows = Array.from(table.querySelectorAll('tr')).slice(1);
+                stockData = rows.map(row => {
+                    const cells = Array.from(row.querySelectorAll('td'));
                     return {
-                        brand: cells[0] ? cells[0].v : '',
-                        model: cells[1] ? cells[1].v : '',
-                        part: cells[2] ? cells[2].v : '',
-                        status: cells[3] ? cells[3].v : ''
+                        brand: cells[0] ? cells[0].textContent.trim() : '',
+                        model: cells[1] ? cells[1].textContent.trim() : '',
+                        part: cells[2] ? cells[2].textContent.trim() : '',
+                        status: cells[3] ? cells[3].textContent.trim() : ''
                     };
-                });
+                }).filter(item => item.brand && item.model); // Filter out empty rows
                 
                 // Update statistics
                 updateStatistics(stockData);
@@ -378,7 +386,7 @@
                 console.error('Error fetching data:', error);
                 loadingIndicator.innerHTML = `
                     <i class="fas fa-exclamation-triangle"></i>
-                    <p>Error loading data. Please check your Google Sheets configuration.</p>
+                    <p>Error loading data from Google Sheets.</p>
                     <p>Using sample data for demonstration.</p>
                 `;
                 
@@ -481,6 +489,10 @@
                     case 'samsung':
                         filteredProducts = stockData.filter(product => 
                             product.brand.toUpperCase().includes("SAMSUNG"));
+                        break;
+                    case 'apple':
+                        filteredProducts = stockData.filter(product => 
+                            product.brand.toUpperCase().includes("APPLE"));
                         break;
                     case 'display':
                         filteredProducts = stockData.filter(product => 
