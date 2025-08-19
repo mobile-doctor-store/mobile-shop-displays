@@ -3,24 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mobile Parts Stock</title>
+  <title>Mobile Parts Inventory</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      background: #f5f7fa;
+      margin: 0;
       padding: 20px;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: auto;
     }
 
     h1 {
       text-align: center;
       margin-bottom: 20px;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .filters input,
+    .filters select {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      min-width: 200px;
+      font-size: 1rem;
     }
 
     .products-grid {
@@ -30,20 +42,30 @@
     }
 
     .product-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       overflow: hidden;
+      transition: transform 0.3s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
     }
 
     .card-header {
       background: #2c3e50;
       color: white;
-      padding: 20px;
+      padding: 15px;
+    }
+
+    .card-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
     }
 
     .card-body {
-      padding: 20px;
+      padding: 15px;
     }
 
     .product-detail {
@@ -58,34 +80,30 @@
 
     .detail-value {
       color: #2c3e50;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .status-available {
       display: inline-block;
-      padding: 5px 12px;
       background: #e8f5e9;
       color: #2e7d32;
+      padding: 5px 12px;
       border-radius: 20px;
-      font-size: 0.9rem;
       font-weight: 500;
     }
 
     .status-out-of-stock {
       display: inline-block;
-      padding: 5px 12px;
       background: #ffebee;
       color: #c62828;
+      padding: 5px 12px;
       border-radius: 20px;
-      font-size: 0.9rem;
       font-weight: 500;
     }
 
-    .loading,
-    .error {
+    .loading, .error, .no-results {
       text-align: center;
-      padding: 40px;
-      font-size: 1.2rem;
+      padding: 30px;
       color: #7f8c8d;
     }
 
@@ -97,100 +115,138 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Mobile Parts Stock</h1>
-    <div class="products-grid" id="products-container">
-      <div class="loading">
-        <i class="fas fa-spinner fa-spin"></i> Loading product data...
-      </div>
-    </div>
+
+  <h1>Mobile Parts Inventory</h1>
+
+  <div class="filters">
+    <input type="text" id="searchInput" placeholder="Search model, brand, part...">
+    <select id="brandFilter">
+      <option value="">All Brands</option>
+    </select>
+    <select id="categoryFilter">
+      <option value="">All Categories</option>
+    </select>
+  </div>
+
+  <div class="products-grid" id="productsContainer">
+    <div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading product data...</div>
   </div>
 
   <script>
-    const productsContainer = document.getElementById('products-container');
+    const searchInput = document.getElementById('searchInput');
+    const brandFilter = document.getElementById('brandFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const productsContainer = document.getElementById('productsContainer');
+
+    let rawData = [];
+    let flatProducts = [];
 
     document.addEventListener('DOMContentLoaded', () => {
-      loadProductData();
+      fetch('product-data.json')
+        .then(res => res.json())
+        .then(data => {
+          rawData = data;
+          flatProducts = flattenData(data);
+          populateFilters(flatProducts);
+          renderProducts(flatProducts);
+        })
+        .catch(err => {
+          console.error(err);
+          showError('Failed to load product data');
+        });
     });
 
-    async function loadProductData() {
-      try {
-        showLoading();
+    function flattenData(data) {
+      const result = [];
 
-        const response = await fetch('product-data.json');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const data = await response.json();
-        productsContainer.innerHTML = '';
-        renderRecursive(data, productsContainer);
-      } catch (error) {
-        console.error('Error loading product data:', error);
-        showError('Failed to load product data. Please try again.');
+      for (let brand in data) {
+        for (let category in data[brand]) {
+          for (let model in data[brand][category]) {
+            const item = {
+              brand,
+              category,
+              model,
+              ...data[brand][category][model]
+            };
+            result.push(item);
+          }
+        }
       }
+
+      return result;
     }
 
-    function showLoading() {
-      productsContainer.innerHTML = `
-        <div class="loading">
-          <i class="fas fa-spinner fa-spin"></i> Loading product data...
-        </div>
-      `;
+    function populateFilters(products) {
+      const brands = new Set();
+      const categories = new Set();
+
+      products.forEach(p => {
+        brands.add(p.brand);
+        categories.add(p.category);
+      });
+
+      [...brands].sort().forEach(b => {
+        brandFilter.innerHTML += `<option value="${b}">${b}</option>`;
+      });
+
+      [...categories].sort().forEach(c => {
+        categoryFilter.innerHTML += `<option value="${c}">${c}</option>`;
+      });
     }
 
-    function showError(message) {
-      productsContainer.innerHTML = `
-        <div class="error">
-          <i class="fas fa-exclamation-circle"></i> ${message}
-        </div>
-      `;
-    }
-
-    function renderRecursive(data, container, path = []) {
-      if (typeof data !== 'object' || data === null) return;
-
-      if (Array.isArray(data)) {
-        data.forEach(item => renderRecursive(item, container, path));
+    function renderProducts(products) {
+      if (!products.length) {
+        productsContainer.innerHTML = `<div class="no-results">No products found.</div>`;
         return;
       }
 
-      const keys = Object.keys(data);
-      const isLeaf = keys.some(k => typeof data[k] !== 'object');
-
-      if (isLeaf) {
+      productsContainer.innerHTML = '';
+      products.forEach(product => {
         const card = document.createElement('div');
         card.className = 'product-card';
+        const statusClass = product.status === 'available' ? 'status-available' : 'status-out-of-stock';
+
         card.innerHTML = `
           <div class="card-header">
-            <h3>${path.join(' → ')}</h3>
+            <h3>${product.brand} ${product.model}</h3>
           </div>
           <div class="card-body">
-            ${Object.entries(data).map(([key, value]) => {
-              if (key === 'status') {
-                const cls = value === 'available' ? 'status-available' : 'status-out-of-stock';
-                return `
-                  <div class="product-detail">
-                    <span class="detail-label">${key}</span>
-                    <span class="${cls}">${value}</span>
-                  </div>
-                `;
-              }
-
-              return `
-                <div class="product-detail">
-                  <span class="detail-label">${key}</span>
-                  <span class="detail-value">${Array.isArray(value) ? value.join(', ') : value}</span>
-                </div>
-              `;
-            }).join('')}
+            <div class="product-detail"><span class="detail-label">Category:</span> <span class="detail-value">${product.category}</span></div>
+            <div class="product-detail"><span class="detail-label">Box:</span> <span class="detail-value">${product.box || '-'}</span></div>
+            <div class="product-detail"><span class="detail-label">Similar Models:</span> <span class="detail-value">${Array.isArray(product.similarModels) ? product.similarModels.join(', ') : product.similarModels || '-'}</span></div>
+            <div class="product-detail"><span class="detail-label">Status:</span> <span class="${statusClass}">${product.status}</span></div>
+            <div class="product-detail"><span class="detail-label">Updated:</span> <span class="detail-value">${product.timestamp}</span></div>
           </div>
         `;
-        container.appendChild(card);
-      } else {
-        for (const key in data) {
-          renderRecursive(data[key], container, [...path, key]);
-        }
-      }
+
+        productsContainer.appendChild(card);
+      });
     }
+
+    function showError(msg) {
+      productsContainer.innerHTML = `<div class="error">${msg}</div>`;
+    }
+
+    function filterAndRender() {
+      const keyword = searchInput.value.toLowerCase();
+      const brandVal = brandFilter.value;
+      const catVal = categoryFilter.value;
+
+      const filtered = flatProducts.filter(p => {
+        const matchText = `${p.brand} ${p.model} ${p.category} ${p.similarModels || ''}`.toLowerCase();
+        return (
+          (!brandVal || p.brand === brandVal) &&
+          (!catVal || p.category === catVal) &&
+          matchText.includes(keyword)
+        );
+      });
+
+      renderProducts(filtered);
+    }
+
+    searchInput.addEventListener('input', filterAndRender);
+    brandFilter.addEventListener('change', filterAndRender);
+    categoryFilter.addEventListener('change', filterAndRender);
   </script>
 </body>
 </html>
