@@ -1,522 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Parts Stock</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 2.5rem;
-        }
-        
-        .subtitle {
-            color: #7f8c8d;
-            font-size: 1.2rem;
-        }
-        
-        .search-container {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        
-        .search-box {
-            flex: 1;
-            min-width: 300px;
-            position: relative;
-        }
-        
-        .search-box input {
-            width: 100%;
-            padding: 15px 15px 15px 45px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .search-box i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #7f8c8d;
-        }
-        
-        .integration-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .integration-panel h2 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .integration-panel h2 i {
-            color: #3498db;
-        }
-        
-        .integration-panel p {
-            color: #7f8c8d;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .control-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 20px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-        
-        .control-btn:hover {
-            background: #2980b9;
-        }
-        
-        .control-btn.outline {
-            background: transparent;
-            border: 2px solid #3498db;
-            color: #3498db;
-        }
-        
-        .control-btn.outline:hover {
-            background: #3498db;
-            color: white;
-        }
-        
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-box {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-box h3 {
-            font-size: 1.1rem;
-            color: #7f8c8d;
-            margin-bottom: 15px;
-        }
-        
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-        
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        
-        .product-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
-        }
-        
-        .product-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card-header {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-        }
-        
-        .card-header h3 {
-            font-size: 1.4rem;
-            margin-bottom: 5px;
-        }
-        
-        .card-body {
-            padding: 20px;
-        }
-        
-        .product-detail {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .detail-label {
-            font-weight: 600;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-        }
-        
-        .detail-value {
-            color: #2c3e50;
-            font-size: 1.1rem;
-        }
-        
-        .status-available {
-            display: inline-block;
-            padding: 5px 12px;
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .status-out-of-stock {
-            display: inline-block;
-            padding: 5px 12px;
-            background: #ffebee;
-            color: #c62828;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .last-updated {
-            text-align: center;
-            margin-top: 30px;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 1.2rem;
-            color: #7f8c8d;
-        }
-        
-        .error {
-            text-align: center;
-            padding: 40px;
-            font-size: 1.2rem;
-            color: #c62828;
-            background: #ffebee;
-            border-radius: 12px;
-        }
-        
-        @media (max-width: 768px) {
-            .search-container {
-                flex-direction: column;
-            }
-            
-            .search-box {
-                min-width: 100%;
-            }
-            
-            .controls {
-                flex-direction: column;
-            }
-            
-            .control-btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mobile Parts Stock</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .product-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: #2c3e50;
+      color: white;
+      padding: 20px;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .product-detail {
+      margin-bottom: 10px;
+    }
+
+    .detail-label {
+      font-weight: bold;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+    }
+
+    .detail-value {
+      color: #2c3e50;
+      font-size: 1.1rem;
+    }
+
+    .status-available {
+      display: inline-block;
+      padding: 5px 12px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .status-out-of-stock {
+      display: inline-block;
+      padding: 5px 12px;
+      background: #ffebee;
+      color: #c62828;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .loading,
+    .error {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2rem;
+      color: #7f8c8d;
+    }
+
+    .error {
+      color: #c62828;
+      background: #ffebee;
+      border-radius: 12px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Mobile Parts Stock</h1>
-            <p class="subtitle">Manage your mobile parts inventory efficiently</p>
-        </header>
-        
-        <div class="search-container">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Search products...">
-            </div>
-        </div>
-        
-        <div class="integration-panel">
-            <h2><i class="fas fa-sync-alt"></i> Live Google Sheets Integration</h2>
-            <p>This website is directly connected to your Google Sheets. All data is fetched in real-time from your published sheet.</p>
-            
-            <div class="controls">
-                <button class="control-btn" id="refresh-btn">
-                    <i class="fas fa-sync"></i> Refresh Data Now
-                </button>
-                <button class="control-btn outline" id="toggle-products">
-                    <i class="fas fa-filter"></i> All Products Available
-                </button>
-            </div>
-        </div>
-        
-        <div class="stats-container">
-            <div class="stat-box">
-                <h3>Total Products</h3>
-                <div class="stat-value" id="total-products">-</div>
-            </div>
-            <div class="stat-box">
-                <h3>Available Now</h3>
-                <div class="stat-value" id="available-products">-</div>
-            </div>
-            <div class="stat-box">
-                <h3>Out of Stock</h3>
-                <div class="stat-value" id="out-of-stock">-</div>
-            </div>
-        </div>
-        
-        <div class="products-grid" id="products-container">
-            <div class="loading">
-                <i class="fas fa-spinner fa-spin"></i> Loading product data...
-            </div>
-        </div>
-        
-        <div class="last-updated">
-            Last updated: <span id="last-updated-time">-</span>
-        </div>
+  <div class="container">
+    <h1>Mobile Parts Stock</h1>
+    <div class="products-grid" id="products-container">
+      <div class="loading">
+        <i class="fas fa-spinner fa-spin"></i> Loading product data...
+      </div>
     </div>
+  </div>
 
-    <script>
-        // DOM elements
-        const productsContainer = document.getElementById('products-container');
-        const searchInput = document.getElementById('search-input');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const toggleProductsBtn = document.getElementById('toggle-products');
-        const totalProductsEl = document.getElementById('total-products');
-        const availableProductsEl = document.getElementById('available-products');
-        const outOfStockEl = document.getElementById('out-of-stock');
-        const lastUpdatedEl = document.getElementById('last-updated-time');
+  <script>
+    const productsContainer = document.getElementById('products-container');
 
-        // Global variables
-        let allProducts = [];
-        let showAllProducts = true;
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProductData();
+    });
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProductData();
-        });
+    async function loadProductData() {
+      try {
+        showLoading();
 
-        // Load product data from external JSON file
-        async function loadProductData() {
-            try {
-                showLoading();
-                
-                // In a real implementation, you would fetch from your Google Sheets URL
-                // For demonstration, we're using a local JSON file
-                const response = await fetch('product-data.json');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                allProducts = await response.json();
-                renderProducts(allProducts);
-                updateStats(allProducts);
-                updateLastUpdated();
-            } catch (error) {
-                console.error('Error loading product data:', error);
-                showError('Failed to load product data. Please try again.');
-            }
-        }
+        const response = await fetch('product-data.json');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-        // Show loading state
-        function showLoading() {
-            productsContainer.innerHTML = `
-                <div class="loading">
-                    <i class="fas fa-spinner fa-spin"></i> Loading product data...
+        const data = await response.json();
+        productsContainer.innerHTML = '';
+        renderRecursive(data, productsContainer);
+      } catch (error) {
+        console.error('Error loading product data:', error);
+        showError('Failed to load product data. Please try again.');
+      }
+    }
+
+    function showLoading() {
+      productsContainer.innerHTML = `
+        <div class="loading">
+          <i class="fas fa-spinner fa-spin"></i> Loading product data...
+        </div>
+      `;
+    }
+
+    function showError(message) {
+      productsContainer.innerHTML = `
+        <div class="error">
+          <i class="fas fa-exclamation-circle"></i> ${message}
+        </div>
+      `;
+    }
+
+    function renderRecursive(data, container, path = []) {
+      if (typeof data !== 'object' || data === null) return;
+
+      if (Array.isArray(data)) {
+        data.forEach(item => renderRecursive(item, container, path));
+        return;
+      }
+
+      const keys = Object.keys(data);
+      const isLeaf = keys.some(k => typeof data[k] !== 'object');
+
+      if (isLeaf) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+          <div class="card-header">
+            <h3>${path.join(' → ')}</h3>
+          </div>
+          <div class="card-body">
+            ${Object.entries(data).map(([key, value]) => {
+              if (key === 'status') {
+                const cls = value === 'available' ? 'status-available' : 'status-out-of-stock';
+                return `
+                  <div class="product-detail">
+                    <span class="detail-label">${key}</span>
+                    <span class="${cls}">${value}</span>
+                  </div>
+                `;
+              }
+
+              return `
+                <div class="product-detail">
+                  <span class="detail-label">${key}</span>
+                  <span class="detail-value">${Array.isArray(value) ? value.join(', ') : value}</span>
                 </div>
-            `;
+              `;
+            }).join('')}
+          </div>
+        `;
+        container.appendChild(card);
+      } else {
+        for (const key in data) {
+          renderRecursive(data[key], container, [...path, key]);
         }
-
-        // Show error state
-        function showError(message) {
-            productsContainer.innerHTML = `
-                <div class="error">
-                    <i class="fas fa-exclamation-circle"></i> ${message}
-                </div>
-            `;
-        }
-
-        // Render product cards
-        function renderProducts(products) {
-            if (products.length === 0) {
-                productsContainer.innerHTML = `
-                    <div class="loading">
-                        No products found matching your criteria.
-                    </div>
-                `;
-                return;
-            }
-            
-            productsContainer.innerHTML = '';
-            
-            products.forEach(product => {
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card';
-                
-                let cardHTML = `
-                    <div class="card-header">
-                        <h3>${product.brand} ${product.model}</h3>
-                    </div>
-                    <div class="card-body">
-                `;
-                
-                // Only add part if it exists
-                if (product.part) {
-                    cardHTML += `
-                        <div class="product-detail">
-                            <span class="detail-label">Part</span>
-                            <span class="detail-value">${product.part}</span>
-                        </div>
-                    `;
-                }
-                
-                // Only add similar display if it exists
-                if (product.similarDisplay) {
-                    cardHTML += `
-                        <div class="product-detail">
-                            <span class="detail-label">Similar Display</span>
-                            <span class="detail-value">${product.similarDisplay}</span>
-                        </div>
-                    `;
-                }
-                
-                // Add status
-                const statusClass = product.status === 'available' ? 'status-available' : 'status-out-of-stock';
-                const statusText = product.status === 'available' ? 'Available' : 'Out of Stock';
-                
-                cardHTML += `
-                    <div class="product-detail">
-                        <span class="detail-label">Status</span>
-                        <span class="${statusClass}">${statusText}</span>
-                    </div>
-                `;
-                
-                cardHTML += `</div></div>`;
-                productCard.innerHTML = cardHTML;
-                productsContainer.appendChild(productCard);
-            });
-        }
-
-        // Update statistics
-        function updateStats(products) {
-            const total = products.length;
-            const available = products.filter(p => p.status === 'available').length;
-            const outOfStock = total - available;
-            
-            totalProductsEl.textContent = total;
-            availableProductsEl.textContent = available;
-            outOfStockEl.textContent = outOfStock;
-        }
-
-        // Update last updated time
-        function updateLastUpdated() {
-            const now = new Date();
-            lastUpdatedEl.textContent = now.toLocaleTimeString();
-        }
-
-        // Search functionality
-        searchInput.addEventListener('input', () => {
-            const searchTerm = searchInput.value.toLowerCase();
-            const filteredProducts = allProducts.filter(product => 
-                product.brand.toLowerCase().includes(searchTerm) ||
-                product.model.toLowerCase().includes(searchTerm) ||
-                product.part.toLowerCase().includes(searchTerm) ||
-                (product.similarDisplay && product.similarDisplay.toLowerCase().includes(searchTerm))
-            );
-            
-            renderProducts(filteredProducts);
-            updateStats(filteredProducts);
-        });
-
-        // Refresh button
-        refreshBtn.addEventListener('click', () => {
-            refreshBtn.querySelector('i').classList.add('fa-spin');
-            
-            // Refresh data
-            loadProductData().then(() => {
-                refreshBtn.querySelector('i').classList.remove('fa-spin');
-                
-                // Show refresh confirmation
-                const originalText = refreshBtn.innerHTML;
-                refreshBtn.innerHTML = '<i class="fas fa-check"></i> Data Refreshed';
-                
-                setTimeout(() => {
-                    refreshBtn.innerHTML = originalText;
-                }, 2000);
-            });
-        });
-
-        // Toggle products button
-        toggleProductsBtn.addEventListener('click', () => {
-            showAllProducts = !showAllProducts;
-            
-            if (showAllProducts) {
-                renderProducts(allProducts);
-                toggleProductsBtn.innerHTML = '<i class="fas fa-filter"></i> All Products Available';
-            } else {
-                const availableProducts = allProducts.filter(p => p.status === 'available');
-                renderProducts(availableProducts);
-                toggleProductsBtn.innerHTML = '<i class="fas fa-filter"></i> Show All Products';
-            }
-            
-            updateStats(allProducts);
-        });
-    </script>
+      }
+    }
+  </script>
 </body>
 </html>
