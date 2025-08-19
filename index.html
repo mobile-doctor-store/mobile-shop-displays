@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Management - Spare Parts Shop</title>
+  <link rel="icon" href="https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_5.ico">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --card: #f4f4f4;
+      --accent: #4caf50;
+      --border: #dddddd;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #f2f2f2;
+      --card: #1e1e1e;
+      --border: #333;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    header {
+      background-color: var(--accent);
+      padding: 20px;
+      text-align: center;
+      color: white;
+      position: relative;
+    }
+
+    .dark-toggle {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: var(--card);
+      color: var(--text);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .product-card {
+      background-color: var(--card);
+      border-left: 4px solid var(--accent);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
+    }
+
+    .product-card:hover {
+      transform: scale(1.02);
+    }
+
+    .product-card img {
+      width: 100px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    .product-card h3 {
+      font-size: 18px;
+      color: var(--accent);
+    }
+
+    .description {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .icon {
+      margin-right: 8px;
+    }
+
+    .stock-info {
+      font-weight: bold;
+      color: green;
+    }
+
+    .similar-models {
+      font-size: 14px;
+      margin-top: 10px;
+      color: #777;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🛠️ Spare Parts Stock Management</h1>
+    <button class="dark-toggle" onclick="toggleDark()">🌙</button>
+  </header>
+
+  <div class="container">
+    <input type="text" id="searchInput" placeholder="🔍 Search products..." onkeyup="filterProducts()">
+    <select id="categoryFilter" onchange="filterProducts()">
+      <option value="all">📂 All Categories</option>
+      <option value="Screens">🖥️ Screens</option>
+      <option value="Batteries">🔋 Batteries</option>
+      <option value="Chargers">🔌 Chargers</option>
+      <option value="Accessories">🛠️ Accessories</option>
+    </select>
+
+    <div class="grid" id="productContainer">
+      <!-- Product cards will be injected here -->
+    </div>
+  </div>
+
+  <script>
+    // Sample Products Data
+    const products = [
+      {
+        name: "Oppo A53 Screen",
+        brand: "Oppo",
+        category: "Screens",
+        stockQuantity: 50,
+        price: 200,
+        sku: "OPP-A53-001",
+        description: "Replacement screen for Oppo A53.",
+        image: "https://via.placeholder.com/100",
+        similarModels: ["Oppo A52 Screen", "Oppo A54 Screen"]
+      },
+      {
+        name: "MI 11 Battery",
+        brand: "MI",
+        category: "Batteries",
+        stockQuantity: 30,
+        price: 150,
+        sku: "MI11-BATT-002",
+        description: "Replacement battery for MI 11.",
+        image: "https://via.placeholder.com/100",
+        similarModels: ["MI 10 Battery", "MI 12 Battery"]
+      },
+      {
+        name: "Motorola G9 Charger",
+        brand: "Motorola",
+        category: "Chargers",
+        stockQuantity: 20,
+        price: 30,
+        sku: "MOTO-G9-003",
+        description: "Fast charger for Motorola G9.",
+        image: "https://via.placeholder.com/100",
+        similarModels: ["Motorola G8 Charger", "Motorola G7 Charger"]
+      },
+      {
+        name: "Oppo A53 Battery",
+        brand: "Oppo",
+        category: "Batteries",
+        stockQuantity: 40,
+        price: 120,
+        sku: "OPP-A53-BATT-004",
+        description: "Replacement battery for Oppo A53.",
+        image: "https://via.placeholder.com/100",
+        similarModels: ["Oppo A52 Battery", "Oppo A54 Battery"]
+      }
+    ];
+
+    // Render Product Cards
+    function renderProducts() {
+      const container = document.getElementById("productContainer");
+      container.innerHTML = "";  // Clear existing products
+
+      products.forEach(product => {
+        const div = document.createElement("div");
+        div.className = "product-card";
+        div.setAttribute("data-category", product.category);
+        div.innerHTML = `
+          <img src="${product.image || 'default-image.jpg'}" alt="${product.name}">
+          <h3>${product.name}</h3>
+          <p><strong>Brand:</strong> ${product.brand}</p>
+          <p><strong>Category:</strong> ${product.category}</p>
+          <p><strong>Price:</strong> $${product.price}</p>
+          <p class="stock-info"><strong>Stock:</strong> ${product.stockQuantity}</p>
+          <p><strong>SKU:</strong> ${product.sku}</p>
+          <p class="description">${product.description}</p>
+          <button onclick="decreaseStock('${product.sku}')">Sold</button>
+          <button onclick="increaseStock('${product.sku}')">Increase Stock</button>
+          <p class="similar-models"><strong>Similar Models:</strong> ${product.similarModels.join(", ")}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Filter Products by Search and Category
+    function filterProducts() {
+      const searchValue = document.getElementById("searchInput").value.toLowerCase();
+      const selectedCategory = document.getElementById("categoryFilter").value;
+      const cards = document.querySelectorAll(".product-card");
+
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        const matchesSearch = text.includes(searchValue);
+        const matchesCategory = selectedCategory === "all" || card.dataset.category === selectedCategory;
+
+        card.style.display = matchesSearch && matchesCategory ? "block" : "none";
+      });
+    }
+
+    // Decrease Stock When Sold
+    function decreaseStock(sku) {
+      const product = products.find(p => p.sku === sku);
+      if (product && product.stockQuantity > 0) {
+        product.stockQuantity -= 1;
+        renderProducts();  // Re-render products to update the stock quantity
+      } else {
+        alert("Stock is already 0.");
+      }
+    }
+
+    // Increase Stock
+    function increaseStock(sku) {
+      const product = products.find(p => p.sku === sku);
+      if (product) {
+        product.stockQuantity += 1;
+        renderProducts();  // Re-render products to update the stock quantity
+      }
+    }
+
+    // Dark/Light Mode Toggle
+    function toggleDark() {
+      document.body.classList.toggle("dark");
+      const btn = document.querySelector(".dark-toggle");
+      btn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+    }
+
+    // Initialize Product View
+    renderProducts();
+  </script>
+
+</body>
+</html>
